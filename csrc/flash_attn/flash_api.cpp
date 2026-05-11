@@ -2,8 +2,7 @@
  * Copyright (c) 2024, Tri Dao.
  ******************************************************************************/
 
-// Include these 2 headers instead of torch/extension.h since we don't need all of the torch headers.
-#include <torch/python.h>
+#include <torch/torch.h>
 #include <torch/nn/functional.h>
 #include <c10/cuda/CUDAGuard.h>
 #include <c10/cuda/CUDAStream.h>
@@ -1475,11 +1474,232 @@ mha_fwd_kvcache(at::Tensor &q,                 // batch_size x seqlen_q x num_he
 }
 } // namespace FLASH_NAMESPACE
 
-PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
-    m.doc() = "FlashAttention";
-    m.def("fwd", &FLASH_NAMESPACE::mha_fwd, "Forward pass");
-    m.def("varlen_fwd", &FLASH_NAMESPACE::mha_varlen_fwd, "Forward pass (variable length)");
-    m.def("bwd", &FLASH_NAMESPACE::mha_bwd, "Backward pass");
-    m.def("varlen_bwd", &FLASH_NAMESPACE::mha_varlen_bwd, "Backward pass (variable length)");
-    m.def("fwd_kvcache", &FLASH_NAMESPACE::mha_fwd_kvcache, "Forward pass, with KV-cache");
+extern "C" {
+
+std::vector<at::Tensor> flash_attn_sm80_fwd(
+    at::Tensor &q,
+    const at::Tensor &k,
+    const at::Tensor &v,
+    std::optional<at::Tensor> &out,
+    std::optional<at::Tensor> &alibi_slopes,
+    float p_dropout,
+    float softmax_scale,
+    bool is_causal,
+    int window_size_left,
+    int window_size_right,
+    float softcap,
+    bool return_softmax,
+    std::optional<at::Generator> gen
+) {
+    return FLASH_NAMESPACE::mha_fwd(
+        q,
+        k,
+        v,
+        out,
+        alibi_slopes,
+        p_dropout,
+        softmax_scale,
+        is_causal,
+        window_size_left,
+        window_size_right,
+        softcap,
+        return_softmax,
+        gen
+    );
+}
+
+std::vector<at::Tensor> flash_attn_sm80_varlen_fwd(
+    at::Tensor &q,
+    const at::Tensor &k,
+    const at::Tensor &v,
+    std::optional<at::Tensor> &out,
+    const at::Tensor &cu_seqlens_q,
+    const at::Tensor &cu_seqlens_k,
+    std::optional<at::Tensor> &seqused_k,
+    std::optional<const at::Tensor> &leftpad_k,
+    std::optional<at::Tensor> &block_table,
+    std::optional<at::Tensor> &alibi_slopes,
+    int max_seqlen_q,
+    const int max_seqlen_k,
+    float p_dropout,
+    float softmax_scale,
+    bool zero_tensors,
+    bool is_causal,
+    int window_size_left,
+    int window_size_right,
+    float softcap,
+    bool return_softmax,
+    std::optional<at::Generator> gen,
+    int num_splits
+) {
+    return FLASH_NAMESPACE::mha_varlen_fwd(
+        q,
+        k,
+        v,
+        out,
+        cu_seqlens_q,
+        cu_seqlens_k,
+        seqused_k,
+        leftpad_k,
+        block_table,
+        alibi_slopes,
+        max_seqlen_q,
+        max_seqlen_k,
+        p_dropout,
+        softmax_scale,
+        zero_tensors,
+        is_causal,
+        window_size_left,
+        window_size_right,
+        softcap,
+        return_softmax,
+        gen,
+        num_splits
+    );
+}
+
+std::vector<at::Tensor> flash_attn_sm80_bwd(
+    const at::Tensor &dout,
+    const at::Tensor &q,
+    const at::Tensor &k,
+    const at::Tensor &v,
+    const at::Tensor &out,
+    const at::Tensor &softmax_lse,
+    std::optional<at::Tensor> &dq,
+    std::optional<at::Tensor> &dk,
+    std::optional<at::Tensor> &dv,
+    std::optional<at::Tensor> &alibi_slopes,
+    float p_dropout,
+    float softmax_scale,
+    bool is_causal,
+    int window_size_left,
+    int window_size_right,
+    float softcap,
+    bool deterministic,
+    std::optional<at::Generator> gen,
+    std::optional<at::Tensor> &rng_state
+) {
+    return FLASH_NAMESPACE::mha_bwd(
+        dout,
+        q,
+        k,
+        v,
+        out,
+        softmax_lse,
+        dq,
+        dk,
+        dv,
+        alibi_slopes,
+        p_dropout,
+        softmax_scale,
+        is_causal,
+        window_size_left,
+        window_size_right,
+        softcap,
+        deterministic,
+        gen,
+        rng_state
+    );
+}
+
+std::vector<at::Tensor> flash_attn_sm80_varlen_bwd(
+    const at::Tensor &dout,
+    const at::Tensor &q,
+    const at::Tensor &k,
+    const at::Tensor &v,
+    const at::Tensor &out,
+    const at::Tensor &softmax_lse,
+    std::optional<at::Tensor> &dq,
+    std::optional<at::Tensor> &dk,
+    std::optional<at::Tensor> &dv,
+    const at::Tensor &cu_seqlens_q,
+    const at::Tensor &cu_seqlens_k,
+    std::optional<at::Tensor> &alibi_slopes,
+    int max_seqlen_q,
+    int max_seqlen_k,
+    float p_dropout,
+    float softmax_scale,
+    bool zero_tensors,
+    bool is_causal,
+    int window_size_left,
+    int window_size_right,
+    float softcap,
+    bool deterministic,
+    std::optional<at::Generator> gen,
+    std::optional<at::Tensor> &rng_state
+) {
+    return FLASH_NAMESPACE::mha_varlen_bwd(
+        dout,
+        q,
+        k,
+        v,
+        out,
+        softmax_lse,
+        dq,
+        dk,
+        dv,
+        cu_seqlens_q,
+        cu_seqlens_k,
+        alibi_slopes,
+        max_seqlen_q,
+        max_seqlen_k,
+        p_dropout,
+        softmax_scale,
+        zero_tensors,
+        is_causal,
+        window_size_left,
+        window_size_right,
+        softcap,
+        deterministic,
+        gen,
+        rng_state
+    );
+}
+
+std::vector<at::Tensor> flash_attn_sm80_fwd_kvcache(
+    at::Tensor &q,
+    const at::Tensor &kcache,
+    const at::Tensor &vcache,
+    std::optional<const at::Tensor> &k,
+    std::optional<const at::Tensor> &v,
+    std::optional<const at::Tensor> &seqlens_k,
+    std::optional<const at::Tensor> &rotary_cos,
+    std::optional<const at::Tensor> &rotary_sin,
+    std::optional<const at::Tensor> &cache_batch_idx,
+    std::optional<const at::Tensor> &leftpad_k,
+    std::optional<at::Tensor> &block_table,
+    std::optional<at::Tensor> &alibi_slopes,
+    std::optional<at::Tensor> &out,
+    float softmax_scale,
+    bool is_causal,
+    int window_size_left,
+    int window_size_right,
+    float softcap,
+    bool is_rotary_interleaved,
+    int num_splits
+) {
+    return FLASH_NAMESPACE::mha_fwd_kvcache(
+        q,
+        kcache,
+        vcache,
+        k,
+        v,
+        seqlens_k,
+        rotary_cos,
+        rotary_sin,
+        cache_batch_idx,
+        leftpad_k,
+        block_table,
+        alibi_slopes,
+        out,
+        softmax_scale,
+        is_causal,
+        window_size_left,
+        window_size_right,
+        softcap,
+        is_rotary_interleaved,
+        num_splits
+    );
+}
+
 }
