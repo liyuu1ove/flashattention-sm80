@@ -1,19 +1,20 @@
 #include "shared_struct.h"
 #include "seqdata_descriptor.h"
 
+/*
+Not implemented functions
+1. beam search
+2. 
+
+
+*/ 
+
+
 
 /* Multihead Attention */
 
 struct cudnnAttnStruct;
 typedef struct cudnnAttnStruct *cudnnAttnDescriptor_t;
-
-struct cudnnStatusStruct;
-typedef struct cudnnStatusStruct cudnnStatus_t;
-
-struct cudnnDataTypeStruct;
-typedef struct cudnnDataTypeStruct cudnnDataType_t;
-
-
 
 
 /* Legacy type for backward compatibility */
