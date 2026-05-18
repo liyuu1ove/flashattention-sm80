@@ -85,7 +85,7 @@ $(FWD_LIB): $(FWD_CPP_OBJ) $(FWD_FAST_CU_OBJS) | $(BUILD_DIR)
 	$(NVCC) $(SO_LDFLAGS) -o $@ $^ $(LDLIBS)
 
 $(FULL_LIB): $(FULL_CPP_OBJ) $(FWD_ALL_CU_OBJS) $(BWD_ALL_CU_OBJS) | $(BUILD_DIR)
-	$(NVCC) $(SO_LDFLAGS) -o $@ $^ $(LDLIBS)
+	$(CXX) $(SO_LDFLAGS) -o $@ $^ $(LDLIBS)
 
 $(MINIMAL_EXE): $(MINIMAL_OBJ) $(FWD_LIB) | $(BUILD_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $(MINIMAL_OBJ) -lflash_attn_sm80_fwd $(EXE_LDFLAGS) $(LDLIBS)

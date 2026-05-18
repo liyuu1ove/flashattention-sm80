@@ -41,3 +41,10 @@ benchmarks/results/
 
 # compile-time generated file
 flash_attn_config.py
+
+
+.venv
+error
+outputs
+*.sh
+
