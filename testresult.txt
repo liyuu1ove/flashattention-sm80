@@ -1,0 +1,54 @@
+[matrix] suite=full cases=52
+[01/52] dense-fp16 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.000488281 cudnn_rel_max=0.000516529
+[02/52] dense-bf16 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.00244141 cudnn_rel_max=0.00325098
+[03/52] causal-fp16 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.00195312 cudnn_rel_max=0.000671592
+[04/52] causal-bf16 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.00976562 cudnn_rel_max=0.00315657
+[05/52] varlen-fp16 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn=skip
+[06/52] varlen-bf16 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn=skip
+[07/52] gqa-fp16 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn=skip
+[08/52] gqa-bf16 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn=skip
+[09/52] softcap-fp16 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn=skip
+[10/52] window-fp16 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn=skip
+[11/52] dense-fp16-d32 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.000488281 cudnn_rel_max=0.000590319
+[12/52] causal-fp16-d32 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.00195312 cudnn_rel_max=0.000672495
+[13/52] dense-fp16-d96 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.000976562 cudnn_rel_max=0.000791139
+[14/52] causal-fp16-d96 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.00195312 cudnn_rel_max=0.000617284
+[15/52] dense-fp16-d128 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.000488281 cudnn_rel_max=0.000522466
+[16/52] causal-fp16-d128 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.00195312 cudnn_rel_max=0.000570125
+[17/52] dense-fp16-d192 ... PASS fa_max_abs=0.000488281 fa_rel_max=0.00048216 cudnn_max_abs=0.000488281 cudnn_rel_max=0.00048216
+[18/52] causal-fp16-d192 ... PASS fa_max_abs=0.000488281 fa_rel_max=0.000112007 cudnn_max_abs=0.00195312 cudnn_rel_max=0.000448029
+[19/52] dense-fp16-d256 ... PASS fa_max_abs=0.000488281 fa_rel_max=0.000519211 cudnn_max_abs=0.000488281 cudnn_rel_max=0.00051948
+[20/52] causal-fp16-d256 ... PASS fa_max_abs=0.000488281 fa_rel_max=0.000141403 cudnn_max_abs=0.00195312 cudnn_rel_max=0.000565611
+[21/52] dense-fp16-s64 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.000976562 cudnn_rel_max=0.000655308
+[22/52] causal-fp16-s64 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.00195312 cudnn_rel_max=0.000646412
+[23/52] dense-fp16-s128 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.000488281 cudnn_rel_max=0.000414594
+[24/52] causal-fp16-s128 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.00195312 cudnn_rel_max=0.000648929
+[25/52] dense-fp16-s256 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.000488281 cudnn_rel_max=0.000680272
+[26/52] causal-fp16-s256 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.00195312 cudnn_rel_max=0.000467727
+[27/52] dense-fp16-b1-h1 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.000488281 cudnn_rel_max=0.000694444
+[28/52] mqa-fp16 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn=skip
+[29/52] varlen-gqa-fp16 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn=skip
+[30/52] window-fp16-s256 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn=skip
+[31/52] softcap-varlen-fp16 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn=skip
+[32/52] dense-bf16-d32 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.00195312 cudnn_rel_max=0.00231214
+[33/52] causal-bf16-d32 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.00585938 cudnn_rel_max=0.00202703
+[34/52] dense-bf16-d96 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.00244141 cudnn_rel_max=0.00247893
+[35/52] causal-bf16-d96 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.0078125 cudnn_rel_max=0.00205761
+[36/52] dense-bf16-d128 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.00195312 cudnn_rel_max=0.00235849
+[37/52] causal-bf16-d128 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.0078125 cudnn_rel_max=0.00244648
+[38/52] dense-bf16-d192 ... PASS fa_max_abs=0.00390625 fa_rel_max=0.00238095 cudnn_max_abs=0.00390625 cudnn_rel_max=0.00238379
+[39/52] causal-bf16-d192 ... PASS fa_max_abs=0.00390625 fa_rel_max=0.00126904 cudnn_max_abs=0.0078125 cudnn_rel_max=0.00253807
+[40/52] dense-bf16-d256 ... PASS fa_max_abs=0.00390625 fa_rel_max=0.00492611 cudnn_max_abs=0.00244141 cudnn_rel_max=0.00308452
+[41/52] causal-bf16-d256 ... PASS fa_max_abs=0.00390625 fa_rel_max=0.00105042 cudnn_max_abs=0.0078125 cudnn_rel_max=0.00210084
+[42/52] dense-bf16-s64 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.00244141 cudnn_rel_max=0.00228102
+[43/52] causal-bf16-s64 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.0078125 cudnn_rel_max=0.00234742
+[44/52] dense-bf16-s128 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.00292969 cudnn_rel_max=0.00256849
+[45/52] causal-bf16-s128 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.0078125 cudnn_rel_max=0.00230415
+[46/52] dense-bf16-s256 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.00244141 cudnn_rel_max=0.00315856
+[47/52] causal-bf16-s256 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.0078125 cudnn_rel_max=0.00235849
+[48/52] dense-bf16-b1-h1 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn_max_abs=0.00244141 cudnn_rel_max=0.00345066
+[49/52] mqa-bf16 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn=skip
+[50/52] varlen-gqa-bf16 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn=skip
+[51/52] window-bf16-s256 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn=skip
+[52/52] softcap-varlen-bf16 ... PASS fa_max_abs=0 fa_rel_max=0 cudnn=skip
+[summary] passed=52 failed=0 cudnn_compared=38 cudnn_skipped=14

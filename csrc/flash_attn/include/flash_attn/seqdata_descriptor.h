@@ -1,41 +1,45 @@
 /* Sequence data descriptor */
 
 typedef enum {
-    CUDNN_SEQDATA_TIME_DIM  = 0, /* index in time */
-    CUDNN_SEQDATA_BATCH_DIM = 1, /* index in batch */
-    CUDNN_SEQDATA_BEAM_DIM  = 2, /* index in beam */
-    CUDNN_SEQDATA_VECT_DIM  = 3  /* index in vector */
-} cudnnSeqDataAxis_t;
+    XYDNN_SEQDATA_TIME_DIM  = 0, /* index in time */
+    XYDNN_SEQDATA_BATCH_DIM = 1, /* index in batch */
+    XYDNN_SEQDATA_BEAM_DIM  = 2, /* index in beam */
+    XYDNN_SEQDATA_VECT_DIM  = 3  /* index in vector */
+} xydnnSeqDataAxis_t;
 
-struct cudnnSeqDataStruct;
-typedef struct cudnnSeqDataStruct *cudnnSeqDataDescriptor_t;
+struct xydnnSeqDataStruct;
+typedef struct xydnnSeqDataStruct *xydnnSeqDataDescriptor_t;
 
-#define CUDNN_SEQDATA_DIM_COUNT 4 /* dimension count */
+#define XYDNN_SEQDATA_DIM_COUNT 4 /* dimension count */
 
-cudnnStatus_t CUDNNWINAPI
-cudnnCreateSeqDataDescriptor(cudnnSeqDataDescriptor_t *seqDataDesc);
+extern "C" {
 
-cudnnStatus_t CUDNNWINAPI
-cudnnDestroySeqDataDescriptor(cudnnSeqDataDescriptor_t seqDataDesc);
+xydnnStatus_t XYDNNWINAPI
+xydnnCreateSeqDataDescriptor(xydnnSeqDataDescriptor_t *seqDataDesc);
 
-cudnnStatus_t CUDNNWINAPI
-cudnnSetSeqDataDescriptor(cudnnSeqDataDescriptor_t seqDataDesc,
-                          cudnnDataType_t dataType,
+xydnnStatus_t XYDNNWINAPI
+xydnnDestroySeqDataDescriptor(xydnnSeqDataDescriptor_t seqDataDesc);
+
+xydnnStatus_t XYDNNWINAPI
+xydnnSetSeqDataDescriptor(xydnnSeqDataDescriptor_t seqDataDesc,
+                          xydnnDataType_t dataType,
                           int nbDims,
                           const int dimA[],
-                          const cudnnSeqDataAxis_t axes[],
+                          const xydnnSeqDataAxis_t axes[],
                           size_t seqLengthArraySize,
                           const int seqLengthArray[],
                           void *paddingFill);
 
-cudnnStatus_t CUDNNWINAPI
-cudnnGetSeqDataDescriptor(const cudnnSeqDataDescriptor_t seqDataDesc,
-                          cudnnDataType_t *dataType,
+xydnnStatus_t XYDNNWINAPI
+xydnnGetSeqDataDescriptor(const xydnnSeqDataDescriptor_t seqDataDesc,
+                          xydnnDataType_t *dataType,
                           int *nbDims,
                           int nbDimsRequested,
                           int dimA[],
-                          cudnnSeqDataAxis_t axes[],
+                          xydnnSeqDataAxis_t axes[],
                           size_t *seqLengthArraySize,
                           size_t seqLengthSizeRequested,
                           int seqLengthArray[],
                           void *paddingFill);
+
+}

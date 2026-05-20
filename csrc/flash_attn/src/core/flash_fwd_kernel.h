@@ -66,16 +66,21 @@ inline __device__ void compute_attn_1rowblock(const Params &params, const int bi
     constexpr int kHeadDim = Kernel_traits::kHeadDim;
     constexpr int kNWarps = Kernel_traits::kNWarps;
 
-    auto seed_offset = at::cuda::philox::unpack(params.philox_args);
-    FLASH_NAMESPACE::Dropout dropout(std::get<0>(seed_offset), std::get<1>(seed_offset), params.p_dropout_in_uint8_t,
-                           bidb, bidh, tidx, params.h);
-
-    // Save seed and offset for backward, before any early exiting. Otherwise the 0-th thread block might
-    // exit early and no one saves the rng states.
-    if (Is_dropout && blockIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0 && tidx == 0) {
-        params.rng_state[0] = std::get<0>(seed_offset);
-        params.rng_state[1] = std::get<1>(seed_offset);
+    unsigned long long dropout_seed = 0;
+    unsigned long long dropout_offset = 0;
+    if constexpr (Is_dropout) {
+        auto seed_offset = at::cuda::philox::unpack(params.philox_args);
+        dropout_seed = std::get<0>(seed_offset);
+        dropout_offset = std::get<1>(seed_offset);
+        // Save seed and offset for backward, before any early exiting. Otherwise the 0-th thread block might
+        // exit early and no one saves the rng states.
+        if (blockIdx.x == 0 && blockIdx.y == 0 && blockIdx.z == 0 && tidx == 0) {
+            params.rng_state[0] = dropout_seed;
+            params.rng_state[1] = dropout_offset;
+        }
     }
+    FLASH_NAMESPACE::Dropout dropout(dropout_seed, dropout_offset, params.p_dropout_in_uint8_t,
+                           bidb, bidh, tidx, params.h);
 
     const BlockInfo</*Varlen=*/!Is_even_MN> binfo(params, bidb);
     if (m_block * kBlockM >= binfo.actual_seqlen_q) return;

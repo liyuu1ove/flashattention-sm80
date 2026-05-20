@@ -4,6 +4,8 @@
 
 #pragma once
 
+#include <cstdio>
+#include <cstdlib>
 #include <tuple>
 
 #if !defined(__CUDACC_RTC__)
