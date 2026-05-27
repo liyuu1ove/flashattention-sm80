@@ -101,6 +101,7 @@ struct Problem {
     unsigned long long dropout_seed;
     int window_left;
     int window_right;
+    int runtime_window;
     PrecisionConfig precision;
 };
 
@@ -115,6 +116,8 @@ struct XyDnnState {
     xydnnSeqDataDescriptor_t o_desc = nullptr;
     at::Tensor workspace;
     at::Tensor reserve;
+    std::vector<int> lo_win;
+    std::vector<int> hi_win;
 };
 
 struct CudnnState {
@@ -425,6 +428,27 @@ XyDnnState create_xydnn_state(const Problem &p,
                     "xydnnSetAttnDescriptorVarlen(clear)");
         (void)total_q;
     }
+    if (p.runtime_window != 0) {
+        state.lo_win.resize(q_time_dim);
+        state.hi_win.resize(q_time_dim);
+        for (int row = 0; row < q_time_dim; ++row) {
+            const int row_base = row + k_time_dim - q_time_dim;
+            int lo = 0;
+            int hi = k_time_dim;
+            if (p.runtime_window == 1) {
+                lo = 0;
+                hi = p.causal ? std::min(k_time_dim, row_base + 1) : k_time_dim;
+            } else if (p.runtime_window == 2) {
+                lo = std::max(0, row_base - std::max(0, p.window_left));
+                hi = std::min(k_time_dim, row_base + 1 + std::max(0, p.window_right));
+            } else if (p.runtime_window == 3) {
+                lo = row % 2;
+                hi = k_time_dim;
+            }
+            state.lo_win[row] = lo;
+            state.hi_win[row] = hi;
+        }
+    }
     return state;
 }
 
@@ -593,8 +617,8 @@ void run_xydnn(const XyDnnState &state,
     check_xydnn(xydnnMultiHeadAttnForward(state.handle,
                                           state.attn,
                                           -1,
-                                          nullptr,
-                                          nullptr,
+                                          state.lo_win.empty() ? nullptr : state.lo_win.data(),
+                                          state.hi_win.empty() ? nullptr : state.hi_win.data(),
                                           nullptr,
                                           nullptr,
                                           state.q_desc,
@@ -734,6 +758,7 @@ int main()
     p.dropout_seed = static_cast<unsigned long long>(read_env_or("DROPOUT_SEED", 1234));
     p.window_left = read_env_or("WINDOW_LEFT", -1);
     p.window_right = read_env_or("WINDOW_RIGHT", -1);
+    p.runtime_window = read_env_or("RUNTIME_WINDOW", 0);
     p.precision = read_precision();
     const int warmup = read_env_or("WARMUP", 20);
     const int iters = read_env_or("ITERS", 100);

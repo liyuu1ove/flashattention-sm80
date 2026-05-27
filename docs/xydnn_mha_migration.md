@@ -23,7 +23,8 @@ pointers, caller-owned workspace/reserve buffers, and explicit handle/stream sta
 - Attention dropout forward through xyDNN dropout descriptors
 - Optional local window, softcap, and ALiBi descriptor options
 - Optional Q/K/V/O projection weights for same-size projections
-- No post-dropout, residuals, backward, paged KV cache, rotary embedding, or split-KV path yet
+- Rotary descriptor and workspace pre-rotation path are being wired, but are not yet verified
+- No post-dropout, residuals, backward, paged KV cache, or split-KV path yet
 
 ## Migration Table
 
@@ -44,7 +45,7 @@ pointers, caller-owned workspace/reserve buffers, and explicit handle/stream sta
 | Device cumulative seqlens | Caller can provide device-side arrays | FA varlen uses device cumulative offsets | Done | `xydnnSetAttnDescriptorVarlen` accepts device `cu_seqlens_q/k` plus totals |
 | Padded regular tensors | cuDNN seqdata can describe padded TNBV tensors | FA regular path uses dense packed batch tensors | Done | Dense non-varlen path works for full-length batches |
 | Auto-pack padded varlen tensors | cuDNN can use seq lengths with padded descriptors | FA varlen expects packed tokens | Partial | xyDNN handles packed varlen; it does not compact padded TNBV input automatically |
-| Local window | Left/right windowed attention | FA supports local attention | Done | Descriptor options map to FA window params; cuDNN per-token window arrays are ignored |
+| Local window | Left/right windowed attention | FA supports local attention | Done | Descriptor options map to FA window params; runtime `loWinIdx/hiWinIdx` arrays are accepted when they describe one fixed full/causal/local pattern |
 | Softcap | Logit softcapping | FA supports softcap | Done | Descriptor option maps to FA softcap params |
 | ALiBi | Per-head attention slope bias | FA supports ALiBi slopes | Done | Descriptor stores raw slope pointer and batch stride |
 | Q/K/V/O projection weights | cuDNN owns optional projection matrices | Projections can be run outside FA core | Partial | Same-size Q/K/V/O projection GEMMs are wired through cuBLAS and device workspace |
@@ -58,9 +59,28 @@ pointers, caller-owned workspace/reserve buffers, and explicit handle/stream sta
 | Residuals | Optional residual input | Could be fused after attention | Not planned for minimal path | xyDNN forward rejects non-null residual pointer |
 | Return softmax/probabilities | cuDNN reserve can expose internals indirectly | FA can write probabilities in dropout-oriented paths | Planned | Need a clear xyDNN policy before exposing |
 | Paged KV cache | Block table / cache paging | FA supports KV cache paths | Planned | Requires additional API surface |
-| Rotary embedding | Rotary Q/K mixing | FA supports rotary in KV-cache path | Planned | Separate from basic MHA |
+| Rotary embedding | Rotary Q/K mixing, commonly used before attention or in KV-cache paths | FA supports rotary in KV-cache path | Partial | xyDNN descriptor/API and workspace pre-rotation path are being wired; correctness and matrix tests are still pending |
 | Backward / gradients | dQ/dK/dV and weight gradients | FA supports backward kernels | Not planned for minimal path | Add after forward parity is stable |
-| Split-KV | Parallel split reduction for performance | FA has split-KV dispatch | Planned | Current Makefile fast target intentionally builds only direct fwd kernels |
+| Split-KV | Parallel split/reduce over the K/V sequence for better occupancy | FA has split-KV dispatch and combine kernels | Planned | Useful for long K/V with short Q, decode, KV cache, and paged-cache style inference; not required for dense basic forward |
+
+## Split-KV Notes
+
+Split-KV divides the K/V sequence for the same Q block into multiple independent splits, runs those splits in parallel, then combines the partial outputs and logsumexp values. This improves SM occupancy when `seqlen_q` is small and `seqlen_k` is large, especially during autoregressive decode where `Q` can be one token while K/V contains the whole context.
+
+For xyDNN migration, split-KV should be treated as a performance and inference-cache feature rather than a semantic prerequisite for basic MHA. It becomes important when adding:
+
+- KV-cache decode paths
+- Paged KV cache / block table support
+- Very long-context inference benchmarks
+- Short-Q, long-K/V dispatch heuristics
+
+The expected implementation work is:
+
+1. Expose split selection policy or keep it internal to xyDNN.
+2. Allocate split partial-output and split-LSE workspace.
+3. Dispatch FA split-KV kernels for supported shapes.
+4. Dispatch the combine kernel.
+5. Add tests for `seqlen_q == 1`, short-Q decode, long K/V, causal mode, fp16, and bf16.
 
 ## Verified Commands
 
@@ -93,6 +113,8 @@ Observed smoke-test status:
 
 1. Apply projection biases in the forward path.
 2. Add tests for projection weights, including `fp16` and `bf16`.
-3. Decide whether xyDNN should auto-pack padded varlen inputs or require packed varlen pointers.
-4. Add projection-weight tests across the supported head dimensions.
-5. Decide the public behavior for return-softmax / reserve contents.
+3. Finish and verify rotary embedding pre-rotation for dense and packed-varlen inputs.
+4. Decide whether xyDNN should auto-pack padded varlen inputs or require packed varlen pointers.
+5. Add projection-weight tests across the supported head dimensions.
+6. Decide the public behavior for return-softmax / reserve contents.
+7. Add split-KV after forward semantics and KV-cache API decisions are stable.

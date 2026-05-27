@@ -420,6 +420,115 @@ xydnnStatus_t build_cu_seqlens_host(const xydnnSeqDataStruct *desc,
     return XYDNN_STATUS_BAD_PARAM;
 }
 
+void normalize_window_for_fa(int seqlen_q,
+                             int seqlen_k,
+                             int *window_size_left,
+                             int *window_size_right,
+                             bool *is_causal)
+{
+    if (*window_size_left >= seqlen_k) {
+        *window_size_left = -1;
+    }
+    if (*window_size_right >= seqlen_k) {
+        *window_size_right = -1;
+    }
+    if (seqlen_q == 1) {
+        *is_causal = false;
+    }
+    if (*is_causal) {
+        *window_size_left = -1;
+        *window_size_right = 0;
+    }
+    if (*window_size_left < 0 && *window_size_right >= 0) {
+        *window_size_left = seqlen_k;
+    }
+    if (*window_size_left >= 0 && *window_size_right < 0) {
+        *window_size_right = seqlen_k;
+    }
+}
+
+int clamp_window_index(int value, int seqlen_k)
+{
+    return std::max(0, std::min(value, seqlen_k));
+}
+
+xydnnStatus_t translate_runtime_window(const int loWinIdx[],
+                                       const int hiWinIdx[],
+                                       int seqlen_q,
+                                       int seqlen_k,
+                                       int *window_size_left,
+                                       int *window_size_right,
+                                       bool *is_causal)
+{
+    if (loWinIdx == nullptr && hiWinIdx == nullptr) {
+        normalize_window_for_fa(seqlen_q, seqlen_k, window_size_left, window_size_right, is_causal);
+        return XYDNN_STATUS_SUCCESS;
+    }
+    if (loWinIdx == nullptr || hiWinIdx == nullptr) {
+        return XYDNN_STATUS_BAD_PARAM;
+    }
+
+    const int shift = seqlen_k - seqlen_q;
+    int inferred_left = -1;
+    int inferred_right = -1;
+    bool has_left_bound = false;
+    bool has_right_bound = false;
+
+    for (int row = 0; row < seqlen_q; ++row) {
+        const int lo = loWinIdx[row];
+        const int hi = hiWinIdx[row];
+        if (lo < 0 || hi < lo || hi > seqlen_k) {
+            return XYDNN_STATUS_BAD_PARAM;
+        }
+
+        const int row_base = row + shift;
+        if (lo > 0) {
+            const int left = row_base - lo;
+            if (left < 0) {
+                return XYDNN_STATUS_NOT_SUPPORTED;
+            }
+            if (has_left_bound && left != inferred_left) {
+                return XYDNN_STATUS_NOT_SUPPORTED;
+            }
+            inferred_left = left;
+            has_left_bound = true;
+        }
+        if (hi < seqlen_k) {
+            const int right = hi - (row_base + 1);
+            if (right < 0) {
+                return XYDNN_STATUS_NOT_SUPPORTED;
+            }
+            if (has_right_bound && right != inferred_right) {
+                return XYDNN_STATUS_NOT_SUPPORTED;
+            }
+            inferred_right = right;
+            has_right_bound = true;
+        }
+    }
+
+    int candidate_left = has_left_bound ? inferred_left : (has_right_bound ? seqlen_k : -1);
+    int candidate_right = has_right_bound ? inferred_right : (has_left_bound ? seqlen_k : -1);
+
+    for (int row = 0; row < seqlen_q; ++row) {
+        const int row_base = row + shift;
+        const int expected_lo = candidate_left < 0
+                                    ? 0
+                                    : clamp_window_index(row_base - candidate_left, seqlen_k);
+        const int expected_hi = candidate_right < 0
+                                    ? seqlen_k
+                                    : clamp_window_index(row_base + 1 + candidate_right, seqlen_k);
+        if (loWinIdx[row] != expected_lo || hiWinIdx[row] != expected_hi) {
+            return XYDNN_STATUS_NOT_SUPPORTED;
+        }
+    }
+
+    *is_causal = has_right_bound && candidate_right == 0 && !has_left_bound;
+    *window_size_left = candidate_left;
+    *window_size_right = candidate_right;
+    normalize_window_for_fa(seqlen_q, seqlen_k, window_size_left, window_size_right, is_causal);
+    return XYDNN_STATUS_SUCCESS;
+}
+
 void set_params_fprop_ptr(FLASH_NAMESPACE::Flash_fwd_params &params,
                           int batch_size,
                           int seqlen_q,
@@ -1355,8 +1464,6 @@ xydnnMultiHeadAttnForward(xydnnHandle_t handle,
                           void *reserveSpace)
 {
     (void)currIdx;
-    (void)loWinIdx;
-    (void)hiWinIdx;
 
     if (attnDesc == nullptr || qDesc == nullptr || kDesc == nullptr || vDesc == nullptr || oDesc == nullptr ||
         queries == nullptr || keys == nullptr || values == nullptr || out == nullptr) {
@@ -1644,24 +1751,15 @@ xydnnMultiHeadAttnForward(xydnnHandle_t handle,
     int window_size_right = attnDesc->windowSizeRight;
     bool is_causal = attnDesc->isCausal != 0;
 
-    if (window_size_left >= seqlen_k) {
-        window_size_left = -1;
-    }
-    if (window_size_right >= seqlen_k) {
-        window_size_right = -1;
-    }
-    if (seqlen_q == 1) {
-        is_causal = false;
-    }
-    if (is_causal) {
-        window_size_left = -1;
-        window_size_right = 0;
-    }
-    if (window_size_left < 0 && window_size_right >= 0) {
-        window_size_left = seqlen_k;
-    }
-    if (window_size_left >= 0 && window_size_right < 0) {
-        window_size_right = seqlen_k;
+    xydnnStatus_t window_status = translate_runtime_window(loWinIdx,
+                                                           hiWinIdx,
+                                                           seqlen_q,
+                                                           seqlen_k,
+                                                           &window_size_left,
+                                                           &window_size_right,
+                                                           &is_causal);
+    if (window_status != XYDNN_STATUS_SUCCESS) {
+        return window_status;
     }
 
     set_params_fprop_ptr(params,
